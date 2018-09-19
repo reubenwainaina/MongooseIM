@@ -63,7 +63,7 @@ publish_notification(Acc0, From, #jid{lserver = Host} = To, Packet, Services) ->
                            Val
                    catch
                        _:_ ->
-                           <<"0">>
+                           <<"1">>
                    end,
     BareRecipient = jid:to_bare(To),
     lists:foreach(

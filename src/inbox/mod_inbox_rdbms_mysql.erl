@@ -57,5 +57,8 @@ set_inbox_incr_unread(Username, Server, ToBareJid, Content, MsgId, Timestamp) ->
                "update content=", esc_string(Content),
                ", unread_count=inbox.unread_count + 1"
                ", msg_id=", esc_string(MsgId),
-               ", timestamp=", esc_int(Timestamp), ";"]).
-
+               ", timestamp=", esc_int(Timestamp), ";"]),
+    mongoose_rdbms:sql_query(Server,
+                             ["SELECT unread_count from inbox where luser=", esc_string(Username),
+                              " AND lserver=", esc_string(Server),
+                              " AND remote_bare_jid=", esc_string(ToBareJid), ";"]).

@@ -13,6 +13,7 @@
 -include("jid.hrl").
 -include("mongoose_ns.hrl").
 -include("mongoose.hrl").
+-include("mongoose_logger.hrl").
 
 -export([start/2, stop/1, deps/2]).
 -export([process_iq/4, user_send_packet/4, filter_packet/1]).
@@ -61,6 +62,11 @@
                       Username :: jid:luser(),
                       Server :: jid:lserver().
 
+-callback get_inbox_unread(User, Server) -> {ok, binary()} | ok when
+                       User :: jid:luser(),
+                       Server :: jid:lserver().
+
+
 -type get_inbox_params() :: #{
         start => erlang:timestamp(),
         'end' => erlang:timestamp(),
@@ -81,8 +87,10 @@ start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, no_queue),
     MucTypes = get_groupchat_types(Host),
     lists:member(muc, MucTypes) andalso mod_inbox_muc:start(Host),
-    ejabberd_hooks:add(user_send_packet, Host, ?MODULE, user_send_packet, 90),
-    ejabberd_hooks:add(filter_local_packet, Host, ?MODULE, filter_packet, 90),
+    %% the priority of user_send_packet and user_filter_packet
+    %% has to be lower than the priority of push_event hook
+    ejabberd_hooks:add(user_send_packet, Host, ?MODULE, user_send_packet, 70),
+    ejabberd_hooks:add(filter_local_packet, Host, ?MODULE, filter_packet, 70),
     store_bin_reset_markers(Host, Opts),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_ESL_INBOX, ?MODULE, process_iq, IQDisc).
 
@@ -91,8 +99,8 @@ start(Host, Opts) ->
 stop(Host) ->
     mod_disco:unregister_feature(Host, ?NS_ESL_INBOX),
     mod_inbox_muc:stop(Host),
-    ejabberd_hooks:delete(user_send_packet, Host, ?MODULE, user_send_packet, 90),
-    ejabberd_hooks:delete(filter_local_packet, Host, ?MODULE, filter_packet, 90),
+    ejabberd_hooks:delete(user_send_packet, Host, ?MODULE, user_send_packet, 70),
+    ejabberd_hooks:delete(filter_local_packet, Host, ?MODULE, filter_packet, 70),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_ESL_INBOX).
 
 
@@ -138,8 +146,13 @@ send_message(To, Msg) ->
                        Packet :: exml:element()) -> map().
 user_send_packet(Acc, From, To, #xmlel{name = <<"message">>} = Msg) ->
     Host = From#jid.server,
-    maybe_process_message(Host, From, To, Msg, outgoing),
-    Acc;
+    case maybe_process_message(Host, From, To, Msg, outgoing) of
+        {ok, UnreadCount} ->
+            mongoose_acc:put(unread_count, UnreadCount, Acc);
+        _ ->
+            Acc
+    end;
+
 user_send_packet(Acc, _From, _To, _Packet) ->
     Acc.
 
@@ -416,7 +429,7 @@ muc_dep(List) ->
 
 callback_funs() ->
     [get_inbox, set_inbox, set_inbox_incr_unread,
-        reset_unread, remove_inbox, clear_inbox].
+        reset_unread, remove_inbox, clear_inbox, get_inbox_unread].
 
 invalid_field_value(Field, Value) ->
     <<"Invalid inbox form field value, field=", Field/binary, ", value=", Value/binary>>.

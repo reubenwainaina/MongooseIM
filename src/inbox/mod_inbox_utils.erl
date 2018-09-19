@@ -47,6 +47,7 @@ write_to_sender_inbox(Server, Sender, Receiver, Packet) ->
     MsgId = get_msg_id(Packet),
     Content = exml:to_binary(Packet),
     Username = Sender#jid.luser,
+    Receivername = Receiver#jid.luser,
     RemoteBareJid = jid:to_binary(jid:to_bare(Receiver)),
     %% no unread for a user because he writes new messages which assumes he read all previous messages.
     Count = integer_to_binary(0),

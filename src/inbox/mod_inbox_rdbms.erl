@@ -19,7 +19,8 @@
          set_inbox_incr_unread/6,
          reset_unread/4,
          remove_inbox/3,
-         clear_inbox/2]).
+         clear_inbox/2,
+         get_inbox_unread/2]).
 
 %% For specific backends
 -export([esc_string/1, esc_int/1]).
@@ -60,6 +61,21 @@ get_inbox_rdbms(LUser, LServer, #{ order := Order } = Params) ->
                  BeginSQL, EndSQL, HiddenSQL,
                  " ORDER BY timestamp ", OrderSQL, ";"],
     mongoose_rdbms:sql_query(LServer, Query).
+
+
+get_inbox_unread(Username, Server) ->
+    case mongoose_rdbms:sql_query(Server,
+                                  ["select unread_count from inbox "
+                                   "WHERE luser=", esc_string(Username), 
+                                   " AND lserver=", esc_string(Server), ";"]) of
+        {selected, []} ->
+            ok;
+        {selected, [{CountBin0}]} ->
+            Count = binary_to_integer(CountBin0) + 1,
+            CountBin = integer_to_binary(Count),
+            {ok, CountBin}
+    end.
+
 
 -spec set_inbox(Username, Server, ToBareJid, Content,
                 Count, MsgId, Timestamp) -> inbox_write_res() when
