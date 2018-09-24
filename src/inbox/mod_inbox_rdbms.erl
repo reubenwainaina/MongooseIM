@@ -71,7 +71,13 @@ get_inbox_unread(Username, Server) ->
         {selected, []} ->
             ok;
         {selected, [{CountBin0}]} ->
-            Count = binary_to_integer(CountBin0) + 1,
+            Count = try binary_to_integer(CountBin0) of
+                        Integer ->
+                            Integer + 1
+                    catch
+                        error:badarg ->
+                            CountBin0 + 1
+                    end,
             CountBin = integer_to_binary(Count),
             {ok, CountBin}
     end.
@@ -233,6 +239,18 @@ check_result(Result, _) ->
     {error, {bad_result, Result}}.
 
 %% TODO
+check_result({selected, [{Val}]}) ->
+    case Val of
+        null ->
+            {ok, <<"1">>};
+        V when is_integer(V) ->
+            {ok, erlang:integer_to_binary(V)};
+        V when is_binary(V) ->
+            {ok, V};
+        _ ->
+           ok
+    end;
+
 check_result({updated, _, [{Val}]}) ->
     {ok, Val};
 
