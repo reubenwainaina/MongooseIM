@@ -40,8 +40,11 @@ set_inbox(Username, Server, ToBareJid, Content, Count, MsgId, Timestamp) ->
                             Timestamp :: non_neg_integer()) -> query_result().
 set_inbox_incr_unread(Username, Server, ToBareJid, Content, MsgId, Timestamp) ->
     Query = build_query(Username, Server, ToBareJid, Content, increment, MsgId, Timestamp),
-    mongoose_rdbms:sql_query(Server, Query).
-
+    mongoose_rdbms:sql_query(Server, Query),
+    mongoose_rdbms:sql_query(Server,
+                            ["SELECT unread_count from inbox where luser=", esc_string(Username),
+                             " AND lserver=", esc_string(Server),
+                             " AND remote_bare_jid=", esc_string(ToBareJid), ";"]).
 %% -----------------------------------------------------------
 %% Internal functions
 %% -----------------------------------------------------------
@@ -84,4 +87,3 @@ build_query(Username, Server, ToBareJid, Content, MsgId, Timestamp, CountInsert,
           " (luser, lserver, remote_bare_jid, content, unread_count, msg_id, timestamp)"
       " VALUES (", ELUser, ", ", ELServer, ", ", EToBareJid, ", ", EContent, ", ",
                 CountInsert, ", ", EMsgId, ", ", ETimestamp, ");"].
-

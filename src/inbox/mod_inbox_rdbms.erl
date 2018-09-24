@@ -128,7 +128,7 @@ remove_inbox_rdbms(Username, Server, ToBareJid) ->
                             ToBareJid :: binary(),
                             Content :: binary(),
                             MsgId :: binary(),
-                            Timestamp :: erlang:timestamp()) -> ok.
+                            Timestamp :: erlang:timestamp()) -> {ok, binary()}.
 set_inbox_incr_unread(Username, Server, ToBareJid, Content, MsgId, Timestamp) ->
     LUsername = jid:nodeprep(Username),
     LServer = jid:nameprep(Server),
@@ -137,8 +137,8 @@ set_inbox_incr_unread(Username, Server, ToBareJid, Content, MsgId, Timestamp) ->
     NumericTimestamp = usec:from_now(Timestamp),
     Res = BackendModule:set_inbox_incr_unread(LUsername, LServer, LToBareJid,
                                               Content, MsgId, NumericTimestamp),
-    %% psql will always return {updated, 1}
-    %% but mysql will return {updated, 2} if it overwrites the row
+    %% psql will return {updated, {[UnreadCount]}}
+    %% mssql and mysql will return {selected, {[Val]}}
     check_result(Res).
 
 -spec reset_unread(User :: binary(),
@@ -238,7 +238,6 @@ check_result({updated, Res}, Exp) ->
 check_result(Result, _) ->
     {error, {bad_result, Result}}.
 
-%% TODO
 check_result({selected, [{Val}]}) ->
     case Val of
         null ->
