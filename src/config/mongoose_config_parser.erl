@@ -362,8 +362,6 @@ process_host_term(Term, Host, State) ->
             add_option(outgoing_pools, Pools, State);
         {rdbms_pool, Pool} when is_atom(Pool) ->
             add_option({rdbms_pool, Host}, Pool, State);
-        {elasticsearch_server, ESConfig} ->
-            add_option(elasticsearch_server, ESConfig, State);
         {node_specific_options, NodeOpts} ->
             add_option(node_specific_options, NodeOpts, State);
         {Opt, Val} ->
