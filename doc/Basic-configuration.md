@@ -36,12 +36,6 @@ There are 2 types of options: params and features. Unlike params, features can b
     * **Description:** SQL DB connection configuration. Currently supported DB types are `mysql` and `pgsql`. To enable the connection, remove '%%' prefix from value.
     * **Syntax:** `"{rdbms_server, {Type, Host, Port, DBName, Username, Password}}."`
 
-* **riak_server** - feature
-    * **Description:** Riak connection pool configuration. Currently only one endpoint can be specified, to connect to more riak nodes you have to use load balancing techniques, for more details see:
-    [Load Balancing riak](http://docs.basho.com/riak/latest/ops/advanced/configs/load-balancing-proxy/) from basho.
-    To enable, remove '%%' prefix from value.
-    * **Syntax:** `"{riak_server, [{pool_size, Size}, {address, Host}, {port, Port}]}."`
-
 * **auth_ldap** - feature
     * **Description:** Put [[LDAP configuration]] here.
 

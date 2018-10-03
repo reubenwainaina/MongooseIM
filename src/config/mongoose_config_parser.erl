@@ -362,8 +362,6 @@ process_host_term(Term, Host, State) ->
             add_option(outgoing_pools, Pools, State);
         {rdbms_pool, Pool} when is_atom(Pool) ->
             add_option({rdbms_pool, Host}, Pool, State);
-        {riak_server, RiakConfig} ->
-            add_option(riak_server, RiakConfig, State);
         {cassandra_servers, CassandraConfig} ->
             add_option(cassandra_servers, CassandraConfig, State);
         {elasticsearch_server, ESConfig} ->
