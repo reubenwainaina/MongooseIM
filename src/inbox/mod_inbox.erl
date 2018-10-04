@@ -62,7 +62,10 @@
                       Username :: jid:luser(),
                       Server :: jid:lserver().
 
--callback get_inbox_unread(User, Server) -> {ok, binary()} | ok when
+-callback clear_inbox(Server) -> inbox_write_res() when
+                      Server :: jid:lserver().
+
+-callback get_inbox_unread(User, Server) -> {ok, integer()} | ok when
                        User :: jid:luser(),
                        Server :: jid:lserver().
 
