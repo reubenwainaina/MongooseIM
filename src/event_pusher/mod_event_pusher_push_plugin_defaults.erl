@@ -58,9 +58,9 @@ sender_id(From, Packet) ->
                            Services :: [mod_event_pusher_push:publish_service()]) ->
     mongooseim_acc:t().
 publish_notification(Acc0, From, #jid{lserver = Host} = To, Packet, Services) ->
-    MessageCount = try mongoose_acc:get(unread_count, Acc0) of
-                       Val ->
-                           Val
+    MessageCount = try mongoose_acc:get(inbox, unread_count, Acc0) of
+                       Val when is_integer(Val) ->
+                           integer_to_binary(Val)
                    catch
                        _:_ ->
                            <<"1">>

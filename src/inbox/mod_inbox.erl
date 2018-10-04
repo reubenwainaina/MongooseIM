@@ -44,7 +44,7 @@
                        ToBareJid :: binary().
 
 -callback set_inbox_incr_unread(Username, Server, ToBareJid,
-                                Content, MsgId, Timestamp) -> inbox_write_res() when
+                                Content, MsgId, Timestamp) -> {ok, integer()} | ok when
                                 Username :: jid:luser(),
                                 Server :: jid:lserver(),
                                 ToBareJid :: binary(),
@@ -148,7 +148,7 @@ user_send_packet(Acc, From, To, #xmlel{name = <<"message">>} = Msg) ->
     Host = From#jid.server,
     case maybe_process_message(Host, From, To, Msg, outgoing) of
         {ok, UnreadCount} ->
-            mongoose_acc:put(unread_count, UnreadCount, Acc);
+            mongoose_acc:set(inbox, unread_count, UnreadCount, Acc);
         _ ->
             Acc
     end;
@@ -167,7 +167,7 @@ filter_packet({From, To, Acc, Msg = #xmlel{name = <<"message">>}}) ->
     Host = To#jid.server,
     Acc0 = case maybe_process_message(Host, From, To, Msg, incoming) of
                {ok, UnreadCount} ->
-                   mongoose_acc:put(unread_count, UnreadCount, Acc);
+                   mongoose_acc:set(inbox, unread_count, UnreadCount, Acc);
                _ ->
                    Acc
            end,

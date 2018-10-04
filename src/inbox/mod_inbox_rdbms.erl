@@ -64,23 +64,16 @@ get_inbox_rdbms(LUser, LServer, #{ order := Order } = Params) ->
 
 
 get_inbox_unread(Username, Server) ->
-    case mongoose_rdbms:sql_query(Server,
+    Res = mongoose_rdbms:sql_query(Server,
                                   ["select unread_count from inbox "
                                    "WHERE luser=", esc_string(Username), 
-                                   " AND lserver=", esc_string(Server), ";"]) of
-        {selected, []} ->
-            ok;
-        {selected, [{CountBin0}]} ->
-            Count = try binary_to_integer(CountBin0) of
-                        Integer ->
-                            Integer + 1
-                    catch
-                        error:badarg ->
-                            CountBin0 + 1
-                    end,
-            CountBin = integer_to_binary(Count),
-            {ok, CountBin}
-    end.
+                                   " AND lserver=", esc_string(Server), ";"]),
+   case check_result(Res) of
+       {ok, []} ->
+          ok;
+       {ok, Count} ->
+           {ok, Count + 1}
+   end. 
 
 
 -spec set_inbox(Username, Server, ToBareJid, Content,
@@ -238,20 +231,32 @@ check_result({updated, Res}, Exp) ->
 check_result(Result, _) ->
     {error, {bad_result, Result}}.
 
+check_result({selected, []}) ->
+    ok;
+
 check_result({selected, [{Val}]}) ->
     case Val of
         null ->
-            {ok, <<"1">>};
+            {ok, 1};
         V when is_integer(V) ->
-            {ok, erlang:integer_to_binary(V)};
-        V when is_binary(V) ->
             {ok, V};
+        V when is_binary(V) ->
+            {ok, binary_to_integer(V)};
         _ ->
            ok
     end;
 
 check_result({updated, _, [{Val}]}) ->
-    {ok, Val};
+ case Val of
+        null ->
+            {ok, 1};
+        V when is_integer(V) ->
+            {ok, V};
+        V when is_binary(V) ->
+            {ok, binary_to_integer(V)};
+        _ ->
+           ok
+    end;
 
 check_result({updated, _}) ->
     ok;
